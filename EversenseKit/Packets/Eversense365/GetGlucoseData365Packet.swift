@@ -5,11 +5,18 @@ extension Eversense365 {
         let trend: GlucoseTrend
         let glucoseDatetime: Date
         let glucoseInMgDl: UInt16
+        /// Raw BLE packet as hex string — required for DMS PostEssentialLogs upload.
+        let rawResponseHex: String
+        /// Sensor ID bytes as hex string — used to compute the DMS portal sensor ID.
+        let sensorIdHex: String
 
-        init(trend: GlucoseTrend, glucoseDatetime: Date, glucoseInMgDl: UInt16) {
+        init(trend: GlucoseTrend, glucoseDatetime: Date, glucoseInMgDl: UInt16,
+             rawResponseHex: String = "", sensorIdHex: String = "") {
             self.trend = trend
             self.glucoseDatetime = glucoseDatetime
             self.glucoseInMgDl = glucoseInMgDl
+            self.rawResponseHex = rawResponseHex
+            self.sensorIdHex = sensorIdHex
         }
     }
 
@@ -86,6 +93,16 @@ extension Eversense365 {
                 sensorIdLength = Eversense365.sensorIdLength
             }
 
+            // Extract raw sensor ID bytes for DMS upload
+            let sensorIdStart = Offset.SENSOR_ID
+            let sensorIdEnd   = min(sensorIdStart + sensorIdLength, data.count)
+            let sensorIdHex   = data.count > sensorIdStart
+                ? data.subdata(in: sensorIdStart..<sensorIdEnd).map { String(format: "%02X", $0) }.joined()
+                : ""
+
+            // Full raw response hex for PostEssentialLogs EssentialLog field
+            let rawResponseHex = data.map { String(format: "%02X", $0) }.joined()
+
             return GetGlucoseDataResponse(
                 trend: getTrend(value: data[Offset.TREND_DIRECTION + sensorIdLength]),
                 glucoseDatetime: Date.fromUnix2000(
@@ -96,7 +113,9 @@ extension Eversense365 {
                         )
                 ),
                 glucoseInMgDl: UInt16(data[Offset.GLUCOSE + sensorIdLength]) |
-                    (UInt16(data[Offset.GLUCOSE + sensorIdLength + 1]) << 8)
+                    (UInt16(data[Offset.GLUCOSE + sensorIdLength + 1]) << 8),
+                rawResponseHex: rawResponseHex,
+                sensorIdHex: sensorIdHex
             )
         }
 

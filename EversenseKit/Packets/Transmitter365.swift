@@ -51,6 +51,9 @@ extension Eversense365 {
                 cgmManager.state.lastGlucoseRaw = rawValue
                 cgmManager.state.recentGlucoseInMgDl = smoothedValue
                 cgmManager.state.recentGlucoseDateTime = mostRecentGlucose.glucoseDatetime
+                // Store raw BLE data and sensor ID for DMS upload
+                cgmManager.state.recentRawBLEHex = mostRecentGlucose.rawResponseHex
+                cgmManager.state.sensorIdHex     = mostRecentGlucose.sensorIdHex
             } else if let recentGlucose = historyResponse.glucoseHistory.last,
                       recentGlucose.datetime > (cgmManager.state.recentGlucoseDateTime ?? Date.distantPast)
             {

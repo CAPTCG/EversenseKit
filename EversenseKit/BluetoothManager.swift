@@ -183,11 +183,19 @@ extension BluetoothManager: CBCentralManagerDelegate {
         advertisementData: [String: Any],
         rssi: NSNumber
     ) {
-        guard let name = peripheral.name, let scanCompletion = self.scanCompletion else {
-            return
-        }
+        // Use device name, fallback to address for unnamed peripherals.
+        // Mirrors Kotlin EversenseScanner.onScanResult():
+        //   E3 transmitters advertise as "T" + serial (e.g. "T0214389").
+        //   E365 transmitters advertise starting with "365".
+        //   Also allow any name containing "versense" (case-insensitive) as a catch-all.
+        let name = peripheral.name ?? peripheral.identifier.uuidString
+        guard let scanCompletion = self.scanCompletion else { return }
 
-        logger.info("Device found! \(name), \(advertisementData)")
+        let isEversense = name.hasPrefix("T") || name.hasPrefix("365") ||
+                          name.lowercased().contains("versense")
+        guard isEversense else { return }
+
+        logger.info("Eversense device found: \(name), rssi: \(rssi)")
         scanCompletion(ScanItem(name: name, rssi: rssi.intValue, peripheral: peripheral), nil)
     }
 

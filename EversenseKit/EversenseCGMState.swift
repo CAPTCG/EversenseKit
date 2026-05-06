@@ -76,6 +76,8 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         recentGlucoseDateTime = rawValue["recentGlucoseDateTime"] as? Date
         lastGlucoseRaw = rawValue["lastGlucoseRaw"] as? UInt16 ?? 0
         useSmoothing = rawValue["useSmoothing"] as? Bool ?? false
+        sensorIdHex = rawValue["sensorIdHex"] as? String
+        recentRawBLEHex = rawValue["recentRawBLEHex"] as? String
         batteryPercentage = rawValue["batteryPercentage"] as? Int ?? -1
 
         username = rawValue["username"] as? String
@@ -179,6 +181,8 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["recentGlucoseDateTime"] = recentGlucoseDateTime
         value["lastGlucoseRaw"] = lastGlucoseRaw
         value["useSmoothing"] = useSmoothing
+        value["sensorIdHex"] = sensorIdHex
+        value["recentRawBLEHex"] = recentRawBLEHex
         value["recentGlucoseTrend"] = recentGlucoseTrend.rawValue
         value["security"] = security.rawValue
         value["username"] = username
@@ -255,6 +259,14 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     /// When true, EselSmoothing is applied to each glucose reading before it is delivered
     /// to LoopKit. Matches the "Use ESEL smoothing" setting in the Kotlin plugin.
     public var useSmoothing: Bool = false
+
+    /// Raw sensor ID hex string from the most recent glucose packet.
+    /// Used by DMSUploadApi to compute the portal sensor ID.
+    public var sensorIdHex: String?
+
+    /// Raw BLE response hex from the most recent glucose packet.
+    /// Required for PostEssentialLogs (EssentialLog field).
+    public var recentRawBLEHex: String?
 
     public var activeAlarms: [ActiveAlarm]
 

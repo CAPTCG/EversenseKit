@@ -188,6 +188,57 @@ extension EversenseCGMManager {
                 self.delegate.notify { delegate in
                     delegate?.cgmManager(self, hasNew: .newData(samples))
                 }
+
+                // Upload to Eversense DMS cloud — mirrors Kotlin EversenseHttp365Util calls
+                // made after each glucose read in the watcher callbacks.
+                // Only runs for 365 transmitters (which require DMS account credentials).
+                if self.state.is365 {
+                    let capturedState = self.state
+                    let capturedSamples = samples
+
+                    DispatchQueue.global(qos: .utility).async {
+                        let signalPct = Int(capturedState.signalStrengthRaw)
+                        let battPct   = capturedState.batteryPercentage
+
+                        // Build GlucoseReading list from samples + state-stored raw data
+                        let rawBLEHex   = capturedState.recentRawBLEHex ?? ""
+                        let sensorIdHex = capturedState.sensorIdHex ?? ""
+
+                        let readingsToUpload = capturedSamples.map { s -> GlucoseReading in
+                            GlucoseReading(
+                                glucoseInMgDl: Int(s.quantity.doubleValue(for: .milligramsPerDeciliter)),
+                                datetime: s.date,
+                                trend: s.trend,
+                                sensorIdHex: sensorIdHex,
+                                rawBLEHex: rawBLEHex
+                            )
+                        }
+
+                        // 1. PostEssentialLogs
+                        DMSUploadApi.uploadGlucoseReadings(
+                            state: capturedState,
+                            readings: readingsToUpload
+                        )
+
+                        // 2. PutCurrentValues (updates portal "Last Sync Date")
+                        if let latest = readingsToUpload.last {
+                            DMSUploadApi.putCurrentValues(
+                                state: capturedState,
+                                glucose: latest.glucoseInMgDl,
+                                timestamp: latest.datetime,
+                                trend: latest.trend,
+                                signalStrengthPercent: signalPct,
+                                batteryPercent: battPct
+                            )
+                        }
+
+                        // 3. PutDeviceEvents (populates Sensor Glucose history table)
+                        DMSUploadApi.putDeviceEvents(
+                            state: capturedState,
+                            readings: readingsToUpload
+                        )
+                    }
+                }
             }
 
             completion?()
