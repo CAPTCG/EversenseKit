@@ -5,29 +5,42 @@ class EversenseLogger {
     private let logger: Logger
     private let fileManager = FileManager.default
 
+    /// When false, suppresses all log output. Mirrors Kotlin EversenseLogger.enableLogging().
+    private var isLoggingEnabled: Bool = true
+
     init(category: String) {
         logger = Logger(subsystem: "org.nightscout.EversenseKit", category: category)
     }
 
+    /// Enable or disable all logging output.
+    /// Mirrors Kotlin: EversenseLogger.instance.enableLogging(value).
+    public func enableLogging(_ value: Bool) {
+        isLoggingEnabled = value
+    }
+
     public func debug(_ msg: String, file: String = #file, _ function: String = #function, _ line: Int = #line) {
+        guard isLoggingEnabled else { return }
         let message = "\(file.file) - \(function)#\(line): \(msg)"
         logger.debug("\(message, privacy: .public)")
         writeToFile(message, .debug)
     }
 
     public func info(_ msg: String, file: String = #file, _ function: String = #function, _ line: Int = #line) {
+        guard isLoggingEnabled else { return }
         let message = "\(file.file) - \(function)#\(line): \(msg)"
         logger.info("\(message, privacy: .public)")
         writeToFile(message, .info)
     }
 
     public func warning(_ msg: String, file: String = #file, _ function: String = #function, _ line: Int = #line) {
+        guard isLoggingEnabled else { return }
         let message = "\(file.file) - \(function)#\(line): \(msg)"
         logger.warning("\(message, privacy: .public)")
         writeToFile(message, .notice)
     }
 
     public func error(_ msg: String, file: String = #file, _ function: String = #function, _ line: Int = #line) {
+        guard isLoggingEnabled else { return }
         let message = "\(file.file) - \(function)#\(line): \(msg)"
         logger.error("\(message, privacy: .public)")
         writeToFile(message, .error)

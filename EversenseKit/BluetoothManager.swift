@@ -292,4 +292,28 @@ extension BluetoothManager: CBCentralManagerDelegate {
             self.logger.info("Reconnect succesfull!")
         }
     }
+
+    // MARK: - RSSI
+
+    /// Request a one-shot RSSI read from the connected peripheral.
+    /// Mirrors Kotlin EversenseGattCallback.readRssi() / EversenseCGMPlugin.readRssi().
+    /// The result arrives in centralManager(_:didReadRSSI:error:).
+    func readRssi() {
+        guard let peripheral = peripheral else {
+            logger.warning("readRssi called but no peripheral connected")
+            return
+        }
+        peripheral.readRSSI()
+    }
+
+    func centralManager(_ central: CBCentralManager, didReadRSSI RSSI: NSNumber, error: Error?) {
+        if let error = error {
+            logger.warning("Failed to read RSSI: \(error.localizedDescription)")
+            return
+        }
+        let rssi = RSSI.intValue
+        logger.debug("RSSI read: \(rssi) dBm")
+        cgmManager?.state.signalStrengthRaw = UInt16(max(0, 100 + rssi))  // map dBm to 0-100 approx
+        cgmManager?.notifyStateDidChange()
+    }
 }
