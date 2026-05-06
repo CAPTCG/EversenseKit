@@ -41,7 +41,15 @@ public class EversenseCGMManager: CGMManager {
     }
 
     internal var device: HKDevice {
-        HKDevice(
+        // batteryPercentage is stored as 0-100 (or -1 for unknown).
+        // HKDevice.batteryLevel expects 0.0-1.0, with nil meaning unknown.
+        // This surfaces the transmitter battery on the Loop/Trio home screen status lights,
+        // matching the Kotlin EversensePlugin.sensorBatteryLevel behaviour in AAPS.
+        let batteryLevel: Double? = state.batteryPercentage > 0
+            ? Double(state.batteryPercentage) / 100.0
+            : nil
+
+        return HKDevice(
             name: state.modelStr,
             manufacturer: "Senseonics",
             model: nil,
@@ -49,7 +57,8 @@ public class EversenseCGMManager: CGMManager {
             firmwareVersion: state.version,
             softwareVersion: state.extVersion,
             localIdentifier: nil,
-            udiDeviceIdentifier: nil
+            udiDeviceIdentifier: nil,
+            batteryLevel: batteryLevel
         )
     }
 
