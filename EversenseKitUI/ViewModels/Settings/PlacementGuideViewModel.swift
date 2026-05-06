@@ -23,12 +23,22 @@ class PlacementGuideViewModel: ObservableObject {
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
+            // Enter diagnostic mode for faster signal updates (~500ms) during placement
+            if cgmManager.state.is365 {
+                Eversense365.setDiagnosticMode(cgmManager: cgmManager, enabled: true)
+            }
             self.updateSignalStrength(cgmManager: cgmManager)
         }
     }
 
     public func stop() {
         running = false
+        // Exit diagnostic mode to restore normal signal-strength update frequency
+        if let cgmManager = cgmManager, cgmManager.state.is365 {
+            DispatchQueue.global(qos: .userInitiated).async {
+                Eversense365.setDiagnosticMode(cgmManager: cgmManager, enabled: false)
+            }
+        }
     }
 
     private func updateSignalStrength(cgmManager: EversenseCGMManager) {

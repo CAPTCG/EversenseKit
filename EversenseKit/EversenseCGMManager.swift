@@ -208,4 +208,26 @@ extension EversenseCGMManager {
             cgmManagerDelegate.cgmManagerDidUpdateState(self)
         }
     }
+
+    /// Forward a push alarm notification to state observers.
+    /// Mirrors Kotlin: plugin.watchers.forEach { it.onAlarmReceived(alarm) }
+    /// Called by PeripheralManager when a 365 PushAlarmWithData packet arrives.
+    func notifyAlarmReceived(_ alarm: ActiveAlarm) {
+        logger.info("Push alarm received: \(alarm.type)")
+        stateObservers.forEach { observer in
+            observer.stateDidUpdate(self.state)
+        }
+        delegate.notify { cgmManagerDelegate in
+            cgmManagerDelegate?.cgmManagerDidUpdateState(self)
+        }
+    }
+
+    /// Called by BluetoothManager when consecutive status-19 disconnects indicate
+    /// the transmitter is not placed correctly on the sensor.
+    /// Mirrors Kotlin: plugin.watchers.forEach { it.onTransmitterNotPlaced() }
+    func notifyTransmitterNotPlaced() {
+        logger.warning("Transmitter placement warning — repeated status-19 disconnects")
+        // Surface the issue via state change so the UI can show a placement alert
+        notifyStateDidChange()
+    }
 }

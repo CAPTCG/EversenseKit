@@ -12,6 +12,11 @@ class BluetoothManager: NSObject {
     private var scanCompletion: ((ScanItem?, ScanError?) -> Void)?
     private var connectCompletion: ((ConnectFailure?) -> Void)?
 
+    /// Tracks consecutive status-19 disconnects to detect transmitter placement issues.
+    /// Mirrors Kotlin EversenseGattCallback.failedConnectionAttempts.
+    private var failedConnectionAttempts: Int = 0
+    private let placementWarningThreshold = 3
+
     override init() {
         super.init()
 
@@ -198,6 +203,9 @@ extension BluetoothManager: CBCentralManagerDelegate {
             return
         }
 
+        // Successful connection resets placement-failure counter
+        failedConnectionAttempts = 0
+
         cgmManager.state.bleNameString = peripheral.name
         cgmManager.notifyStateDidChange()
 
@@ -226,6 +234,20 @@ extension BluetoothManager: CBCentralManagerDelegate {
 
         cgmManager.state.connectionStatus = .idle
         cgmManager.notifyStateDidChange()
+
+        // Status-19 = transmitter actively rejected connection (placement issue).
+        // Track consecutive failures and warn after threshold — mirrors Kotlin EversenseGattCallback.
+        if let cbError = error as? CBError, cbError.code.rawValue == 19 {
+            failedConnectionAttempts += 1
+            logger.warning("Status-19 disconnect — attempt \(failedConnectionAttempts)")
+            if failedConnectionAttempts >= placementWarningThreshold {
+                DispatchQueue.main.async {
+                    cgmManager.notifyTransmitterNotPlaced()
+                }
+            }
+        } else {
+            failedConnectionAttempts = 0
+        }
 
         if !cgmManager.isOnboarded {
             return

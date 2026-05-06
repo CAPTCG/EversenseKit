@@ -33,7 +33,23 @@ extension Eversense365 {
             if let mostRecentGlucose = mostRecentGlucose,
                mostRecentGlucose.glucoseDatetime > (cgmManager.state.recentGlucoseDateTime ?? Date.distantPast)
             {
-                cgmManager.state.recentGlucoseInMgDl = mostRecentGlucose.glucoseInMgDl
+                // Apply EselSmoothing if enabled — mirrors Kotlin Eversense365Communicator.readGlucose()
+                let rawValue = mostRecentGlucose.glucoseInMgDl
+                let smoothedValue: UInt16
+                if cgmManager.state.useSmoothing,
+                   let lastSmooth = cgmManager.state.recentGlucoseInMgDl,
+                   cgmManager.state.lastGlucoseRaw > 0
+                {
+                    smoothedValue = UInt16(EselSmoothing.smooth(
+                        currentRaw: Int(rawValue),
+                        lastSmooth: Int(lastSmooth),
+                        lastRaw: Int(cgmManager.state.lastGlucoseRaw)
+                    ))
+                } else {
+                    smoothedValue = rawValue
+                }
+                cgmManager.state.lastGlucoseRaw = rawValue
+                cgmManager.state.recentGlucoseInMgDl = smoothedValue
                 cgmManager.state.recentGlucoseDateTime = mostRecentGlucose.glucoseDatetime
             } else if let recentGlucose = historyResponse.glucoseHistory.last,
                       recentGlucose.datetime > (cgmManager.state.recentGlucoseDateTime ?? Date.distantPast)
@@ -52,10 +68,12 @@ extension Eversense365 {
             }
 
             if let mostRecentGlucose = mostRecentGlucose {
+                // Use smoothed value if smoothing is on
+                let deliveredValue = cgmManager.state.recentGlucoseInMgDl ?? mostRecentGlucose.glucoseInMgDl
                 samples.append(
                     NewGlucoseSample(
                         cgmManager: cgmManager,
-                        value: mostRecentGlucose.glucoseInMgDl,
+                        value: deliveredValue,
                         trend: mostRecentGlucose.trend,
                         dateTime: mostRecentGlucose.glucoseDatetime
                     )
@@ -252,6 +270,26 @@ extension Eversense365 {
         } catch {
             logger.error("[365] Something went wrong during calibration: \(error)")
             throw error
+        }
+    }
+
+    /// Enable or disable diagnostic mode on the 365 transmitter.
+    /// Diagnostic mode increases signal-strength update frequency to ~500ms,
+    /// enabling accurate placement feedback in PlacementGuideViewModel.
+    /// Ported from EversenseCGMPlugin.setDiagnosticMode() (Kotlin).
+    static func setDiagnosticMode(cgmManager: EversenseCGMManager, enabled: Bool) {
+        do {
+            if enabled {
+                let _: EnterDiagnosticModeResponse = try cgmManager.bluetoothManager
+                    .write(EnterDiagnosticModePacket())
+                logger.info("[365] Diagnostic mode enabled")
+            } else {
+                let _: ExitDiagnosticModeResponse = try cgmManager.bluetoothManager
+                    .write(ExitDiagnosticModePacket())
+                logger.info("[365] Diagnostic mode disabled")
+            }
+        } catch {
+            logger.warning("[365] setDiagnosticMode(\(enabled)) failed: \(error)")
         }
     }
 

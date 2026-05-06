@@ -262,9 +262,12 @@ extension PeripheralManager: CBPeripheralDelegate {
             DispatchQueue.main.async {
                 self.cgmManager.state.activeAlarms = [response.alarm]
                 self.cgmManager.notifyStateDidChange()
+                // Forward alarm to CGMManager so observers (e.g. Loop alert system) are notified.
+                // Mirrors Kotlin: plugin.watchers.forEach { it.onAlarmReceived(alarm) }
+                self.cgmManager.notifyAlarmReceived(response.alarm)
             }
 
-            logger.debug("[365] Received alarm")
+            logger.debug("[365] Received alarm: \(response.alarm.type)")
             return
         }
 
