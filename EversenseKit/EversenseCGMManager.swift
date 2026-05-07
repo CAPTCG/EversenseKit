@@ -41,14 +41,6 @@ public class EversenseCGMManager: CGMManager {
     }
 
     internal var device: HKDevice {
-        // batteryPercentage is stored as 0-100 (or -1 for unknown).
-        // HKDevice.batteryLevel expects 0.0-1.0, with nil meaning unknown.
-        // This surfaces the transmitter battery on the Loop/Trio home screen status lights,
-        // matching the Kotlin EversensePlugin.sensorBatteryLevel behaviour in AAPS.
-        let batteryLevel: Double? = state.batteryPercentage > 0
-            ? Double(state.batteryPercentage) / 100.0
-            : nil
-
         return HKDevice(
             name: state.modelStr,
             manufacturer: "Senseonics",
@@ -57,8 +49,7 @@ public class EversenseCGMManager: CGMManager {
             firmwareVersion: state.version,
             softwareVersion: state.extVersion,
             localIdentifier: nil,
-            udiDeviceIdentifier: nil,
-            batteryLevel: batteryLevel
+            udiDeviceIdentifier: nil
         )
     }
 
@@ -273,7 +264,7 @@ extension EversenseCGMManager {
     /// Mirrors Kotlin: plugin.watchers.forEach { it.onAlarmReceived(alarm) }
     /// Called by PeripheralManager when a 365 PushAlarmWithData packet arrives.
     func notifyAlarmReceived(_ alarm: ActiveAlarm) {
-        logger.info("Push alarm received: \(alarm.type)")
+        logger.info("Push alarm received: \(alarm.code)")
         stateObservers.forEach { observer in
             observer.stateDidUpdate(self.state)
         }

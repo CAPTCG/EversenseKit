@@ -267,7 +267,7 @@ extension PeripheralManager: CBPeripheralDelegate {
                 self.cgmManager.notifyAlarmReceived(response.alarm)
             }
 
-            logger.debug("[365] Received alarm: \(response.alarm.type)")
+            logger.debug("[365] Received alarm: \(response.alarm.code)")
             return
         }
 

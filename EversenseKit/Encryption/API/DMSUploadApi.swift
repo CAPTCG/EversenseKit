@@ -77,10 +77,10 @@ enum DMSUploadApi {
             return true
         }
 
-        logger.info("Uploading \(uploadable.count) reading(s) — tx='\(state.transmitterSerialNumber ?? "")'")
+        logger.info("Uploading \(uploadable.count) reading(s) — tx='\(state.bleNameString ?? "")'")
 
         let formatter = iso8601Formatter()
-        let txId = state.transmitterSerialNumber ?? ""
+        let txId = state.bleNameString ?? ""
         let fw   = state.version ?? ""
 
         let records = uploadable.map { r -> String in
@@ -145,7 +145,7 @@ enum DMSUploadApi {
             return false
         }
 
-        let txId     = state.transmitterSerialNumber ?? ""
+        let txId     = state.bleNameString ?? ""
         let sensorId = readings.first(where: { !$0.sensorIdHex.isEmpty })?.sensorIdHex ?? ""
         let tzOffsetSec = TimeZone.current.secondsFromGMT()
         let offsetBytes = int32LE(tzOffsetSec).base64EncodedString()
@@ -241,15 +241,13 @@ enum DMSUploadApi {
     /// Mirrors Kotlin trendOrdinal(): STALE=0, FALLING_FAST=1, FALLING=2, FLAT=3, RISING=4, RISING_FAST=5
     static func trendOrdinal(_ trend: GlucoseTrend?) -> Int {
         switch trend {
-        case .none, nil:          return 0  // STALE / NONE
-        case .down:               return 1  // SINGLE_DOWN / FALLING_FAST
-        case .downDown:           return 1  // extra down
-        case .downSlowly:         return 2  // FORTY_FIVE_DOWN / FALLING
-        case .flat:               return 3  // FLAT
-        case .upSlowly:           return 4  // FORTY_FIVE_UP / RISING
-        case .up:                 return 5  // SINGLE_UP / RISING_FAST
-        case .upUp:               return 5  // extra up
-        @unknown default:         return 3
+        case .none, nil:   return 0  // STALE / NONE
+        case .downDown:    return 1  // SINGLE_DOWN / FALLING_FAST
+        case .down:        return 2  // FORTY_FIVE_DOWN / FALLING
+        case .flat:        return 3  // FLAT
+        case .up:          return 4  // FORTY_FIVE_UP / RISING
+        case .upUp:        return 5  // SINGLE_UP / RISING_FAST
+        @unknown default:  return 3
         }
     }
 
@@ -358,21 +356,4 @@ struct GlucoseReading {
     let trend: GlucoseTrend?
     let sensorIdHex: String
     let rawBLEHex: String    // raw BLE packet hex — required for PostEssentialLogs
-}
-
-// MARK: - Data helpers
-
-private extension Data {
-    init?(hexString: String) {
-        let hex = hexString.filter { $0.isHexDigit }
-        guard hex.count % 2 == 0 else { return nil }
-        var bytes: [UInt8] = []
-        var idx = hex.startIndex
-        while idx < hex.endIndex {
-            let next = hex.index(idx, offsetBy: 2)
-            guard let b = UInt8(hex[idx..<next], radix: 16) else { return nil }
-            bytes.append(b); idx = next
-        }
-        self.init(bytes)
-    }
 }
