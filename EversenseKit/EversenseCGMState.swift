@@ -74,8 +74,6 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         signalStrengthRaw = rawValue["signalStrengthRaw"] as? UInt16 ?? 0
         recentGlucoseInMgDl = rawValue["recentGlucoseInMgDl"] as? UInt16
         recentGlucoseDateTime = rawValue["recentGlucoseDateTime"] as? Date
-        lastGlucoseRaw = rawValue["lastGlucoseRaw"] as? UInt16 ?? 0
-        useSmoothing = rawValue["useSmoothing"] as? Bool ?? false
         sensorIdHex = rawValue["sensorIdHex"] as? String
         recentRawBLEHex = rawValue["recentRawBLEHex"] as? String
         batteryPercentage = rawValue["batteryPercentage"] as? Int ?? -1
@@ -179,8 +177,6 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
         value["rateRisingThreshold"] = rateRisingThreshold
         value["recentGlucoseInMgDl"] = recentGlucoseInMgDl
         value["recentGlucoseDateTime"] = recentGlucoseDateTime
-        value["lastGlucoseRaw"] = lastGlucoseRaw
-        value["useSmoothing"] = useSmoothing
         value["sensorIdHex"] = sensorIdHex
         value["recentRawBLEHex"] = recentRawBLEHex
         value["recentGlucoseTrend"] = recentGlucoseTrend.rawValue
@@ -252,13 +248,6 @@ public struct EversenseCGMState: RawRepresentable, Equatable {
     public var recentGlucoseInMgDl: UInt16?
     public var recentGlucoseDateTime: Date?
     public var recentGlucoseTrend: GlucoseTrend
-
-    /// Last raw (unsmoothed) glucose value, used by EselSmoothing as the previous-raw input.
-    public var lastGlucoseRaw: UInt16 = 0
-
-    /// When true, EselSmoothing is applied to each glucose reading before it is delivered
-    /// to LoopKit. Matches the "Use ESEL smoothing" setting in the Kotlin plugin.
-    public var useSmoothing: Bool = false
 
     /// Raw sensor ID hex string from the most recent glucose packet.
     /// Used by DMSUploadApi to compute the portal sensor ID.

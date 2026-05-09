@@ -33,23 +33,8 @@ extension Eversense365 {
             if let mostRecentGlucose = mostRecentGlucose,
                mostRecentGlucose.glucoseDatetime > (cgmManager.state.recentGlucoseDateTime ?? Date.distantPast)
             {
-                // Apply EselSmoothing if enabled — mirrors Kotlin Eversense365Communicator.readGlucose()
                 let rawValue = mostRecentGlucose.glucoseInMgDl
-                let smoothedValue: UInt16
-                if cgmManager.state.useSmoothing,
-                   let lastSmooth = cgmManager.state.recentGlucoseInMgDl,
-                   cgmManager.state.lastGlucoseRaw > 0
-                {
-                    smoothedValue = UInt16(EselSmoothing.smooth(
-                        currentRaw: Int(rawValue),
-                        lastSmooth: Int(lastSmooth),
-                        lastRaw: Int(cgmManager.state.lastGlucoseRaw)
-                    ))
-                } else {
-                    smoothedValue = rawValue
-                }
-                cgmManager.state.lastGlucoseRaw = rawValue
-                cgmManager.state.recentGlucoseInMgDl = smoothedValue
+                cgmManager.state.recentGlucoseInMgDl = rawValue
                 cgmManager.state.recentGlucoseDateTime = mostRecentGlucose.glucoseDatetime
                 // Store raw BLE data and sensor ID for DMS upload
                 cgmManager.state.recentRawBLEHex = mostRecentGlucose.rawResponseHex

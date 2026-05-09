@@ -44,30 +44,14 @@ extension EversenseE3 {
             if let mostRecentGlucose = mostRecentGlucose,
                mostRecentGlucose.datetime > (cgmManager.state.recentGlucoseDateTime ?? Date.distantPast)
             {
-                // Apply EselSmoothing if enabled — mirrors Kotlin EversenseE3Communicator.readGlucose()
                 let rawValue = mostRecentGlucose.glucoseInMgDl
-                let smoothedValue: UInt16
-                if cgmManager.state.useSmoothing,
-                   let lastSmooth = cgmManager.state.recentGlucoseInMgDl,
-                   cgmManager.state.lastGlucoseRaw > 0
-                {
-                    smoothedValue = UInt16(EselSmoothing.smooth(
-                        currentRaw: Int(rawValue),
-                        lastSmooth: Int(lastSmooth),
-                        lastRaw: Int(cgmManager.state.lastGlucoseRaw)
-                    ))
-                } else {
-                    smoothedValue = rawValue
-                }
-
-                cgmManager.state.lastGlucoseRaw = rawValue
-                cgmManager.state.recentGlucoseInMgDl = smoothedValue
+                cgmManager.state.recentGlucoseInMgDl = rawValue
                 cgmManager.state.recentGlucoseDateTime = mostRecentGlucose.datetime
 
                 samples.append(
                     NewGlucoseSample(
                         cgmManager: cgmManager,
-                        value: smoothedValue,
+                        value: rawValue,
                         trend: mostRecentGlucose.trend,
                         dateTime: mostRecentGlucose.datetime
                     )
