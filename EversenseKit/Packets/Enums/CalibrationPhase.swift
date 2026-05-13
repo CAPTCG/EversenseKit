@@ -1,7 +1,7 @@
 public enum CalibrationPhase: UInt8 {
     case WARM_UP = 1
-    case DAILY_CALIBRATION = 2
-    case INITIALIZATION = 3
+    case INITIALIZATION = 2
+    case DAILY_CALIBRATION = 3
     case SUSPICIOUS = 4
     case UNKNOWN = 5
     case DEBUG = 6
