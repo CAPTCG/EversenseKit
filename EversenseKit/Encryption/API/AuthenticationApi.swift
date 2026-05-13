@@ -1,26 +1,38 @@
 // AuthenticationApi.swift
 // Handles DMS OAuth token requests.
 // Both async (for onboarding UI) and synchronous (for background BLE queue) variants.
+//
+// E3  transmitters use the EU DMS endpoints (ousiamapialpha.eversensedms.com)
+// E365 transmitters use the US DMS endpoints (usiamapi.eversensedms.com)
 
 import Foundation
 
 enum AuthenticationApi {
-    private static let tokenUrl    = "https://usiamapi.eversensedms.com/connect/token"
-    private static let clientId    = "eversenseMMAAndroid"
-    private static let clientSecret = "6ksPx#]~wQ3U"
+
+    // MARK: - Endpoints
+
+    /// US endpoints — used by Eversense 365
+    private static let tokenUrlUS      = "https://usiamapi.eversensedms.com/connect/token"
+
+    /// EU/OUS endpoints — used by Eversense E3
+    private static let tokenUrlEU      = "https://ousiamapialpha.eversensedms.com/connect/token"
+
+    private static let clientId        = "eversenseMMAAndroid"
+    private static let clientSecret    = "6ksPx#]~wQ3U"
 
     private static let logger = EversenseLogger(category: "AuthenticationApi")
 
     // MARK: - Async (used by onboarding UI)
 
-    static func login(username: String, password: String) async throws -> AuthResponse {
-        guard let url = URL(string: tokenUrl) else {
+    static func login(username: String, password: String, isE3: Bool = false) async throws -> AuthResponse {
+        let urlString = isE3 ? tokenUrlEU : tokenUrlUS
+        guard let url = URL(string: urlString) else {
             logger.error("Could not create URL...")
             throw NSError(domain: "Could not create URL...", code: -1)
         }
 
         let message = buildFormBody(username: username, password: password)
-        logger.debug("Logging in to eversensedms API...")
+        logger.debug("Logging in to eversensedms API (\(isE3 ? "EU/E3" : "US/365"))...")
 
         var request = URLRequest(url: url, timeoutInterval: 30)
         request.httpMethod = "POST"
@@ -39,17 +51,18 @@ enum AuthenticationApi {
     }
 
     // MARK: - Synchronous (used by DMSUploadApi.getOrRefreshToken from BLE queue)
-    // Mirrors Kotlin EversenseHttp365Util.login() which is called synchronously
-    // from networkExecutor.submit{}.get() in authV2flow().
+    // Mirrors Kotlin EversenseHttpE3Util / EversenseHttp365Util .login()
+    // which is called synchronously from networkExecutor.submit{}.get().
 
-    static func loginSync(username: String, password: String) -> AuthResponse? {
-        guard let url = URL(string: tokenUrl) else {
+    static func loginSync(username: String, password: String, isE3: Bool = false) -> AuthResponse? {
+        let urlString = isE3 ? tokenUrlEU : tokenUrlUS
+        guard let url = URL(string: urlString) else {
             logger.error("Could not create URL...")
             return nil
         }
 
         let message = buildFormBody(username: username, password: password)
-        logger.debug("loginSync: logging in to eversensedms API...")
+        logger.debug("loginSync: logging in to eversensedms API (\(isE3 ? "EU/E3" : "US/365"))...")
 
         var request = URLRequest(url: url, timeoutInterval: 30)
         request.httpMethod = "POST"
