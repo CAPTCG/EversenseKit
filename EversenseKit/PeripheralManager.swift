@@ -329,6 +329,10 @@ extension PeripheralManager {
         do {
             let _: EversenseE3.SaveBleBondingInformationResponse = try write(EversenseE3.SaveBleBondingInformationPacket())
 
+            // Reset lastSynced so fullSync always runs on first connect after app restart or update.
+            // Without this, a persisted lastSynced value causes fullSync to skip, leaving the
+            // "Last sync" timestamp frozen on the status screen.
+            cgmManager.state.lastSynced = nil
             EversenseE3.fullSync(peripheralManager: self, cgmManager: cgmManager)
             connectCompletion?(nil)
             connectCompletion = nil
@@ -438,6 +442,8 @@ extension PeripheralManager {
                 salt: salt
             )
 
+            // Reset lastSynced so fullSync always runs on first connect after app restart or update.
+            cgmManager.state.lastSynced = nil
             Eversense365.fullSync(peripheralManager: self, cgmManager: cgmManager)
             connectCompletion?(nil)
             connectCompletion = nil
