@@ -25,15 +25,15 @@ extension EversenseE3 {
 
         /// Builds the calibration packet matching the official Eversense app exactly.
         ///
-        /// Packet layout (decompiled from operationToSendBloodGlucoseValueToTransmitter):
+        /// Packet layout verified against official app (operationToSendBloodGlucoseValueToTransmitter):
         ///
         ///  [0]    0x15  — SendBloodGlucoseDataCommandId
         ///  [1-2]  sampleDate  — FAT-packed date of BG reading (2 bytes, GMT)
         ///  [3-4]  sampleTime  — FAT-packed time of BG reading (2 bytes, GMT)
-        ///  [5-6]  currentDate — FAT-packed date of submission = now (2 bytes, GMT)
+        ///  [5-6]  currentTime — FAT-packed TIME of submission = now (2 bytes, GMT, NOT date)
         ///  [7]    bgLSB  — glucose LSB
         ///  [8]    bgMSB  — glucose MSB
-        ///  [9]    bgLSB  — glucose LSB repeated (matches official app byte layout)
+        ///  [9]    bgLSB  — glucose LSB repeated
         ///  [10]   0x55   — rolling calibration enabled flag
         ///  [11-12] CRC16 little-endian
         func getRequestData() -> Data {
@@ -44,7 +44,7 @@ extension EversenseE3 {
             var data = Data([PacketIds.sendBloodGlucoseDataCommandId.rawValue])
             data.append(BinaryOperations.toDateArray(date: sampleTime.toGmt()))  // [1-2] sample date
             data.append(BinaryOperations.toTimeArray(date: sampleTime.toGmt()))  // [3-4] sample time
-            data.append(BinaryOperations.toDateArray(date: now.toGmt()))          // [5-6] current date
+            data.append(BinaryOperations.toTimeArray(date: now.toGmt()))          // [5-6] current TIME (not date)
             data.append(contentsOf: [bgLsb, bgMsb, bgLsb])                       // [7-9] BG bytes
             data.append(0x55)                                                     // [10]  rolling cal flag
 
