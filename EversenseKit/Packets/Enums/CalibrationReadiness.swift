@@ -1,13 +1,13 @@
 public enum CalibrationReadiness: UInt8 {
     case Ready = 0
     case NotEnoughData = 1
-    case GlucoseTooHigh = 2
+    case GlucoseRateTooHigh = 2
     case TooSoon = 3
     case DropoutPhase = 4
     case SensorEol = 5
     case NoSensorLinked = 6
     case UnsupportedMode = 7
-    case Calibrating = 8
+    case WaitingPostCalibration = 8
     case LedDisconnectDetected = 9
     case TransmitterEol = 10
     case Unknown = 255
@@ -18,8 +18,8 @@ public enum CalibrationReadiness: UInt8 {
             return LocalizedString("Ready for calibration", comment: "title for Ready")
         case .NotEnoughData:
             return LocalizedString("Not enough data", comment: "title for NotEnoughData")
-        case .GlucoseTooHigh:
-            return LocalizedString("Glucose is too high", comment: "title for GlucoseTooHigh")
+        case .GlucoseRateTooHigh:
+            return LocalizedString("Glucose rate of change too high", comment: "title for GlucoseRateTooHigh")
         case .TooSoon:
             return LocalizedString("Too soon", comment: "title for TooSoon")
         case .DropoutPhase:
@@ -30,8 +30,8 @@ public enum CalibrationReadiness: UInt8 {
             return LocalizedString("No sensor linked", comment: "title for NoSensorLinked")
         case .UnsupportedMode:
             return LocalizedString("Unsupported", comment: "title for UnsupportedMode")
-        case .Calibrating:
-            return LocalizedString("Calibration in progress", comment: "title for Calibrating")
+        case .WaitingPostCalibration:
+            return LocalizedString("Waiting after calibration", comment: "title for WaitingPostCalibration")
         case .LedDisconnectDetected:
             return LocalizedString("Disconnect detected", comment: "title for LedDisconnectDetected")
         case .TransmitterEol:
