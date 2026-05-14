@@ -34,7 +34,7 @@ extension EversenseE3 {
         ///  [7]    bgLSB  — glucose LSB
         ///  [8]    bgMSB  — glucose MSB
         ///  [9]    bgLSB  — glucose LSB repeated
-        ///  [10]   0x55   — rolling calibration enabled flag
+        ///  [10]   0x00   — rolling cal disabled; official app only enables (0x55) for US+protocolVersion>=4.0
         ///  [11-12] CRC16 little-endian
         func getRequestData() -> Data {
             let now = Date.now
@@ -46,7 +46,7 @@ extension EversenseE3 {
             data.append(BinaryOperations.toTimeArray(date: sampleTime.toGmt()))  // [3-4] sample time
             data.append(BinaryOperations.toTimeArray(date: now.toGmt()))          // [5-6] current TIME (not date)
             data.append(contentsOf: [bgLsb, bgMsb, bgLsb])                       // [7-9] BG bytes
-            data.append(0x55)                                                     // [10]  rolling cal flag
+            data.append(0x00)                                                     // [10]  rolling cal disabled — matches non-US official app
 
             let checksum = BinaryOperations.generateChecksumCRC16(data: data)
             data.append(BinaryOperations.dataFrom16Bits(value: checksum))         // [11-12] CRC16
