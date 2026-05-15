@@ -94,9 +94,9 @@ enum CommandOperations {
         var data =
             Data([
                 EversenseE3.PacketIds.readFourByteSerialFlashRegisterCommandId.rawValue,
-                UInt8(memoryAddress.rawValue & 0xFF),
+                UInt8((memoryAddress.rawValue & 0xFF0000) >> 16),
                 UInt8((memoryAddress.rawValue & 0xFF00) >> 8),
-                UInt8((memoryAddress.rawValue & 0xFF0000) >> 16)
+                UInt8(memoryAddress.rawValue & 0xFF)
             ])
         let checksum = BinaryOperations.generateChecksumCRC16(data: data)
         data.append(BinaryOperations.dataFrom16Bits(value: checksum))
@@ -108,9 +108,9 @@ enum CommandOperations {
         var data =
             Data([
                 EversenseE3.PacketIds.readTwoByteSerialFlashRegisterCommandId.rawValue,
-                UInt8(memoryAddress.rawValue & 0xFF),
+                UInt8((memoryAddress.rawValue & 0xFF0000) >> 16),
                 UInt8((memoryAddress.rawValue & 0xFF00) >> 8),
-                UInt8((memoryAddress.rawValue & 0xFF0000) >> 16)
+                UInt8(memoryAddress.rawValue & 0xFF)
             ])
         let checksum = BinaryOperations.generateChecksumCRC16(data: data)
         data.append(BinaryOperations.dataFrom16Bits(value: checksum))
@@ -122,9 +122,9 @@ enum CommandOperations {
         var data =
             Data([
                 EversenseE3.PacketIds.readSingleByteSerialFlashRegisterCommandId.rawValue,
-                UInt8(memoryAddress.rawValue & 0xFF),
+                UInt8((memoryAddress.rawValue & 0xFF0000) >> 16),
                 UInt8((memoryAddress.rawValue & 0xFF00) >> 8),
-                UInt8((memoryAddress.rawValue & 0xFF0000) >> 16)
+                UInt8(memoryAddress.rawValue & 0xFF)
             ])
         let checksum = BinaryOperations.generateChecksumCRC16(data: data)
         data.append(BinaryOperations.dataFrom16Bits(value: checksum))
