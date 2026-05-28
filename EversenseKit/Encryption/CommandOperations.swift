@@ -1,6 +1,6 @@
-enum FlashMemory: UInt32 {
+﻿enum FlashMemory: UInt32 {
     case sensorFieldCurrentRaw = 0x0000_049D
-    case batteryPercentage = 0x0000_040B
+    case batteryPercentage = 0x0000_0406
 
     case transmitterModelNumber = 0x0000_0006
     case transmitterSoftwareVersion = 0x0000_000A
@@ -9,7 +9,7 @@ enum FlashMemory: UInt32 {
     case isOneCalPhase = 0x0000_0496
     case calibrationsMadeInThisPhase = 0x0000_08A1
     case currentCalibrationPhase = 0x0000_089C
-    case calibrationReadiness = 0x0000_040C
+    case calibrationReadiness = 0x0000_0137
     case minCalibrationThreshold = 0x0000_0912
     case maxCalibrationThreshold = 0x0000_0914
 
@@ -68,7 +68,7 @@ enum FlashMemory: UInt32 {
     case linkedSensorId = 0x0000_088C
     case unlinkedSensorId = 0x0000_0416
 
-    case mmaFeatures = 0x0000_0137
+    case mmaFeatures = 0x0000_040C
     case dayStartTime = 0x0000_1110
     case nightStartTime = 0x0000_1112
 

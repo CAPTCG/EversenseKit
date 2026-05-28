@@ -1,4 +1,4 @@
-import LoopKit
+﻿import LoopKit
 
 extension EversenseE3 {
     static let fakeAppVersion = "8.0.1"
@@ -10,6 +10,16 @@ extension EversenseE3 {
         lastGlucoseTimestamp: Date
     ) -> [NewGlucoseSample] {
         do {
+            // Sync transmitter clock before reading glucose
+            // Mirrors Android clock drift fix (June26).
+            if let currentDT: GetCurrentDateTimeResponse = try? peripheralManager.write(GetCurrentDateTimePacket()) {
+                let drift = abs(currentDT.datetime.timeIntervalSince1970 - Date.nowWithTimezone().timeIntervalSince1970)
+                if drift >= 10 {
+                    logger.info("[E3] Clock drift detected before glucose read — syncing transmitter clock")
+                    let _: SetCurrentDateTimeResponse = try peripheralManager.write(SetCurrentDateTimePacket())
+                }
+            }
+
             let mostRecentGlucose = getRecentGlucose(peripheralManager: peripheralManager)
 
             logger.debug("Sending GetLogRangePacket...")
@@ -129,25 +139,37 @@ extension EversenseE3 {
             cgmManager.state.extVersion = versionExtendedResponse.extVersion
 
             // Get last calibration datetime
+            // Range validation: reject implausible dates (garbage during NOT_ENOUGH_DATA)
+            let minCalDate = Date(timeIntervalSince1970: 1577836800) // 2020-01-01
+            let maxCalDate = Date(timeIntervalSince1970: 1893456000) // 2030-01-01
             let lastCalibrationDate: GetLastCalibrationDateResponse = try peripheralManager
                 .write(GetLastCalibrationDatePacket())
             let lastCalibrationTime: GetLastCalibrationTimeResponse = try peripheralManager
                 .write(GetLastCalibrationTimePacket())
-            cgmManager.state.lastCalibration = Date.fromComponents(
+            let newLastCal = Date.fromComponents(
                 date: lastCalibrationDate.date,
                 time: lastCalibrationTime.time
             )
+            if newLastCal >= minCalDate && newLastCal <= maxCalDate {
+                cgmManager.state.lastCalibration = newLastCal
+            } else {
+                logger.warning("[E3] lastCalibration out of plausible range, ignoring")
+            }
 
             // Get next calibration datetime
             let nextCalibrationDate: GetNextCalibrationDateResponse = try peripheralManager
                 .write(GetNextCalibrationDatePacket())
             let nextCalibrationTime: GetNextCalibrationTimeResponse = try peripheralManager
                 .write(GetNextCalibrationTimePacket())
-            cgmManager.state.nextCalibration = Date.fromComponents(
+            let newNextCal = Date.fromComponents(
                 date: nextCalibrationDate.date,
                 time: nextCalibrationTime.time
             )
-
+            if newNextCal >= minCalDate && newNextCal <= maxCalDate {
+                cgmManager.state.nextCalibration = newNextCal
+            } else {
+                logger.warning("[E3] nextCalibration out of plausible range, ignoring")
+            }
             // Get current calibration phase
             let calibrationMode: CalibrationMode
             do {
